@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { auth } from '../firebase/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import api from '../api'; // Import the Axios instance
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -12,9 +13,18 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // Sign in with Firebase
       await signInWithEmailAndPassword(auth, email, password);
       console.log('User logged in successfully!');
-      navigate('/chat'); // Redirect user to chat page
+
+      // Fetch user data from your backend (example)
+      const user = auth.currentUser;
+      const userId = user.uid; // Or get user ID from Firebase Auth
+      const response = await api.get(`/users/${userId}`);
+      console.log('User data:', response.data);
+
+      // Redirect user to chat page
+      navigate('/chat');
     } catch (error) {
       setError(error.message);
     }
@@ -22,10 +32,7 @@ function Login() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-800 bg-cover bg-center relative">
-      {/* Background pattern (for the top part) */}
       <div className="absolute inset-0 bg-no-repeat bg-top bg-cover" style={{ backgroundImage: 'url(/path-to-your-background-image.svg)' }} />
-      
-      {/* White curved container for the login form */}
       <div className="relative w-full max-w-lg bg-white rounded-t-3xl px-10 pt-10 pb-16 z-10">
         <h1 className="text-4xl font-bold text-center text-gray-900 mb-4">Login</h1>
         <p className="text-center text-gray-600 mb-6">Sign in to continue.</p>
