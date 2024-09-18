@@ -2,30 +2,24 @@ import React, { useState } from 'react';
 import { auth } from '../firebase/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import api from '../api'; // Import the Axios instance
 
 function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [userId, setUserId] = useState('');
-  const navigate = useNavigate();
+  const [userId, setUserId] = useState(''); // State to store the user ID
+  const navigate = useNavigate(); // Hook to navigate to other pages
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      // Sign up with Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
-      setUserId(uid);
+      const uid = userCredential.user.uid; // Get the user's UID
+      setUserId(uid); // Set the UID in state
       console.log('User signed up successfully with UID:', uid);
 
-      // Optionally, save user information to your backend
-      await api.post('/users', { uid, email }); // Adjust endpoint and data as needed
-      console.log('User information saved to backend.');
-
       // Navigate to another page after showing the UID
-      setTimeout(() => navigate('/chat'), 3000);
+      setTimeout(() => navigate('/chat'), 3000); // Wait 3 seconds and then navigate to '/chat'
     } catch (error) {
       setError(error.message);
     }
@@ -38,11 +32,13 @@ function Signup() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-800 bg-cover bg-center relative">
+      {/* Background pattern */}
       <div
         className="absolute inset-0 bg-no-repeat bg-top bg-cover"
         style={{ backgroundImage: 'url(/path-to-your-background-image.svg)' }}
       />
 
+      {/* Back button */}
       <div className="absolute top-8 left-8 z-20">
         <button 
           onClick={() => navigate(-1)} 
@@ -53,6 +49,7 @@ function Signup() {
         </button>
       </div>
 
+      {/* Signup form */}
       <div className="relative w-full max-w-lg bg-white rounded-t-3xl px-10 pt-10 pb-16 z-10 mt-12">
         <h1 className="text-4xl font-bold text-center text-gray-900 mb-4">Create New Account</h1>
         <p className="text-center text-gray-600 mb-6">
@@ -106,6 +103,7 @@ function Signup() {
           </button>
         </form>
 
+        {/* Show the User ID after successful signup */}
         {userId && (
           <div className="mt-6 text-center">
             <p className="text-gray-700">
