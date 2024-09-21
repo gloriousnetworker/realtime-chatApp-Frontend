@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/firebase';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faBars } from '@fortawesome/free-solid-svg-icons';
+import { db } from '../../firebase/firebase';
 
 const UserSidebar = ({
   customUserId,
   selectedUser,
   handleUserClick,
-  showSearch,
-  setShowSearch,
   showSidebar,
-  setShowSidebar,
   messages,
 }) => {
   const [users, setUsers] = useState([]);
@@ -61,27 +56,14 @@ const UserSidebar = ({
         </div>
       )}
 
-      {/* Mobile Search Bar */}
-      {showSearch && (
-        <input
-          type="text"
-          className="w-full p-3 rounded-lg border border-gray-300 mb-4"
-          placeholder="Search for user by ID..."
-          value={searchTerm}
-          onChange={handleSearch}
-        />
-      )}
-
-      {/* Search Bar for Desktop */}
-      <div className="hidden md:block mb-6">
-        <input
-          type="text"
-          className="w-full p-3 rounded-lg border border-gray-300"
-          placeholder="Search for user by ID..."
-          value={searchTerm}
-          onChange={handleSearch}
-        />
-      </div>
+      {/* Search Bar (Visible on both mobile and desktop) */}
+      <input
+        type="text"
+        className="w-full p-3 rounded-lg border border-gray-300 mb-4"
+        placeholder="Search for user by ID..."
+        value={searchTerm}
+        onChange={handleSearch}
+      />
 
       {/* Display filtered users */}
       <div className="mt-4 w-full">

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Chat from './components/Chat';
-import Signup from './components/Signup';
-import Login from './components/Login';
+import Chat from './components/chat/Chat';
+import Signup from './auth/Signup';
+import Login from './auth/Login';
 import Maintenance from './pages/Maintenance'; // Import the Maintenance page
 
 function App() {
   // State to control maintenance mode (true means maintenance mode is on)
-  const [isMaintenanceMode] = useState(true); // Remove the setIsMaintenanceMode
+  const [isMaintenanceMode] = useState(false); // Remove the setIsMaintenanceMode
 
   return (
     <Router>

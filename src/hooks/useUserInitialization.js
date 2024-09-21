@@ -8,18 +8,37 @@ import {
   setDoc,
   serverTimestamp,
   getDocs,
+  query,
+  where,
 } from 'firebase/firestore';
 
-const generateCustomUserId = () => {
+const generateUniqueCustomUserId = async () => {
+  let isUnique = false;
+  let customUserId = '';
+
   const adjectives = ["Quick", "Lazy", "Happy", "Bright", "Brave"];
   const nouns = ["Lion", "Eagle", "Shark", "Panda", "Tiger"];
-  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-  const randomNumber = Math.floor(Math.random() * 1000);
-  return `${randomAdjective}${randomNoun}${randomNumber}`.toLowerCase();
+
+  while (!isUnique) {
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    const randomNumber = Math.floor(Math.random() * 1000);
+    customUserId = `${randomAdjective}${randomNoun}${randomNumber}`.toLowerCase();
+
+    // Check if this customUserId already exists in Firestore
+    const usersSnapshot = await getDocs(
+      query(collection(db, 'users'), where('customUserId', '==', customUserId))
+    );
+
+    if (usersSnapshot.empty) {
+      isUnique = true;
+    }
+  }
+
+  return customUserId;
 };
 
-const useUserInitialization = () => {
+const useUserInitialization = (setFilteredUsers) => {
   const [customUserId, setCustomUserId] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,11 +47,11 @@ const useUserInitialization = () => {
     const initializeUser = async () => {
       let storedUserId = localStorage.getItem('customUserId');
       let userId = localStorage.getItem('userId');
-  
+
       if (auth.currentUser && !userId) {
         userId = auth.currentUser.uid;
       }
-  
+
       if (!userId) {
         try {
           const userCredential = await signInAnonymously(auth);
@@ -43,33 +62,36 @@ const useUserInitialization = () => {
           return;
         }
       }
-  
+
       if (!storedUserId) {
         try {
           const userRef = doc(db, 'users', userId);
           const userDoc = await getDoc(userRef);
-  
+
           if (userDoc.exists()) {
             storedUserId = userDoc.data().customUserId;
           } else {
-            storedUserId = generateCustomUserId();
+            // Use the new function to ensure uniqueness
+            storedUserId = await generateUniqueCustomUserId();
             await setDoc(userRef, {
               userId: userId,
               customUserId: storedUserId,
               createdAt: serverTimestamp(),
             });
           }
-  
+
           localStorage.setItem('customUserId', storedUserId);
         } catch (error) {
           console.error('Error checking/creating user in Firestore:', error.message);
         }
       }
-  
+
       setCustomUserId(storedUserId);
-      setLoading(false);
+
+      // Add console log to debug customUserId after setting it
+      console.log('customUserId in useUserInitialization:', storedUserId);
     };
-  
+
     const fetchUsers = async () => {
       try {
         const usersSnapshot = await getDocs(collection(db, 'users'));
@@ -78,13 +100,14 @@ const useUserInitialization = () => {
           ...doc.data(),
         }));
         setUsers(usersList);
+        setFilteredUsers(usersList); // Populate filtered users initially
       } catch (error) {
         console.error('Error fetching users:', error.message);
       }
     };
-  
-    initializeUser().then(fetchUsers);
-  }, []);
+
+    initializeUser().then(() => fetchUsers().finally(() => setLoading(false)));
+  }, [setFilteredUsers]);
 
   return { customUserId, users, loading };
 };

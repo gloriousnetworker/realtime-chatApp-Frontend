@@ -1,14 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db, auth } from '../firebase/firebase';
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { db, auth } from '../../firebase/firebase';
+import { collection, addDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import useAuthGuard from '../hooks/useAuthGuard';
-import useUserInitialization from '../hooks/useUserInitialization'; // Custom hook
+import useAuthGuard from '../../hooks/useAuthGuard';
+import useUserInitialization from '../../hooks/useUserInitialization'; // Custom hook
 import ChatHeader from './ChatHeader';
 import UserSidebar from './UserSidebar';
 import MessageInput from './MessageInput';
@@ -19,7 +15,7 @@ function Chat() {
   useAuthGuard();
   const navigate = useNavigate();
 
-  const [messages,] = useState([]);
+  const [messages, setMessages] = useState([]); // Updated: Added setMessages
   const [newMessage, setNewMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,29 +23,54 @@ function Chat() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [chatId,] = useState(null);
+  const [chatId, setChatId] = useState(null); // Initialize chatId with useState
   const messageEndRef = useRef(null);
 
   const { customUserId, users, loading } = useUserInitialization(setFilteredUsers); // Get initialized user data
 
+  // Add console log to debug customUserId in Chat
+  console.log('customUserId in Chat:', customUserId);
+
   const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !chatId) return;
-
+  
+    // Create a temporary message with a local timestamp and a temporary ID
+    const temporaryMessage = {
+      id: Date.now().toString(), // Temporary ID based on current time
+      text: newMessage,
+      timestamp: new Date(), // Client-side timestamp
+      senderId: customUserId,
+      recipientId: selectedUser,
+      isRead: false,
+      chatId,
+    };
+  
+    // Optimistically add the message to the local state before sending
+    setMessages((prevMessages) => [...prevMessages, temporaryMessage]);
+    setNewMessage('');
+  
     try {
-      const messageData = {
-        text: newMessage,
-        timestamp: serverTimestamp(),
-        senderId: customUserId,
-        recipientId: selectedUser,
-        isRead: false,
-        chatId,
-      };
-      await addDoc(collection(db, 'chats', chatId, 'messages'), messageData);
-      setNewMessage('');
+      // Send the message to Firestore with the real server timestamp
+      const messageRef = await addDoc(collection(db, 'chats', chatId, 'messages'), {
+        ...temporaryMessage,
+        timestamp: serverTimestamp(), // Firestore server-side timestamp
+      });
+  
+      // After the message is saved to Firestore, update the local state with the real message ID and timestamp
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === temporaryMessage.id
+            ? { ...msg, id: messageRef.id, timestamp: temporaryMessage.timestamp }
+            : msg
+        )
+      );
     } catch (error) {
       console.error('Error sending message:', error);
+      // Optionally handle errors and remove the optimistic message if it fails
     }
   };
+  
+  
 
   const handleFileSend = async (e) => {
     const file = e.target.files[0];
@@ -83,6 +104,17 @@ function Chat() {
 
   const handleUserClick = (userId) => {
     setSelectedUser(userId);
+
+    // Generate chatId based on both users
+    const newChatId = customUserId < userId 
+      ? `${customUserId}_${userId}` 
+      : `${userId}_${customUserId}`;
+    setChatId(newChatId);
+    
+
+    // Add console log to debug chatId
+    console.log('ChatId after user click:', newChatId);
+
     if (window.innerWidth < 768) {
       setShowSidebar(false);
     }
@@ -114,6 +146,31 @@ function Chat() {
     setShowEmojiPicker(false);
   };
 
+  // Subscribe to messages when chatId changes
+  useEffect(() => {
+    if (!chatId) return;
+  
+    const unsubscribe = onSnapshot(
+      collection(db, 'chats', chatId, 'messages'),
+      (snapshot) => {
+        const fetchedMessages = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+  
+        // Update messages state with fetched messages (sorted by timestamp)
+        setMessages(fetchedMessages.sort((a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()));
+      },
+      (error) => {
+        console.error('Error fetching messages:', error);
+      }
+    );
+  
+    return () => unsubscribe();
+  }, [chatId]);
+  
+  
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -124,8 +181,8 @@ function Chat() {
       <ChatHeader
         showSearch={showSearch}
         setShowSearch={setShowSearch}
-        setShowSidebar={setShowSidebar}
         handleLogout={handleLogout}
+        setShowSidebar={setShowSidebar}
       />
 
       {/* Sidebar */}
@@ -148,16 +205,20 @@ function Chat() {
           messages={messages}
           customUserId={customUserId}
           messageEndRef={messageEndRef}
+          selectedUser={selectedUser}
         />
+
 
         {/* Message input */}
         <MessageInput
           newMessage={newMessage}
           setNewMessage={setNewMessage}
           handleSendMessage={handleSendMessage}
-          handleKeyDown={handleKeyDown}
           handleFileSend={handleFileSend}
+          handleKeyDown={handleKeyDown}
           setShowEmojiPicker={setShowEmojiPicker}
+          customUserId={customUserId}
+          chatId={chatId} // Ensure chatId is passed
         />
       </div>
 
