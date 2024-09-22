@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Chat from './components/chat/Chat';
 import Signup from './auth/Signup';
 import Login from './auth/Login';
+import ForgotPassword from './auth/ForgotPassword'; // Import the Forgot Password page
 import Maintenance from './pages/Maintenance'; // Import the Maintenance page
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
               <Route path="/" element={<Navigate to="/login" />} /> {/* Default to Login */}
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} /> {/* Forgot Password Route */}
               <Route path="/chat" element={<Chat />} />
             </>
           )}

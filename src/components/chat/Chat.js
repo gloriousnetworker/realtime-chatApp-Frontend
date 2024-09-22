@@ -176,7 +176,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-purple-300 to-blue-300">
+    <div className="flex flex-col h-screen bg-white">
       {/* Mobile header */}
       <ChatHeader
         showSearch={showSearch}
