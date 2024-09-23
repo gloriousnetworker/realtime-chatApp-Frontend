@@ -133,6 +133,21 @@ function Chat() {
     }
   };
 
+  useEffect(() => {
+    const handleBackButton = (event) => {
+      event.preventDefault(); // Prevent default back button behavior
+      navigate(-1); // Navigate one step back
+    };
+
+    // Add event listener for browser back button
+    window.addEventListener('popstate', handleBackButton);
+
+    return () => {
+      // Cleanup listener on component unmount
+      window.removeEventListener('popstate', handleBackButton);
+    };
+  }, [navigate]);
+
   const handleLogout = () => {
     signOut(auth)
       .then(() => {
@@ -239,6 +254,7 @@ function Chat() {
         setShowSearch={setShowSearch}
         handleLogout={handleLogout}
         setShowSidebar={setShowSidebar}
+        goBack={() => navigate(-1)}
       />
 
       {/* Sidebar */}
@@ -265,6 +281,7 @@ function Chat() {
           messageEndRef={messageEndRef}
           selectedUser={selectedUser}
           setActive={handleChatAreaClick}
+          setShowEmojiPicker={setShowEmojiPicker}
         />
 
         {/* Message input */}

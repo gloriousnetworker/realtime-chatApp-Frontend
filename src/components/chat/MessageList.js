@@ -1,7 +1,10 @@
 import React, { useEffect } from "react";
 import { format, isToday, isYesterday } from "date-fns";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
-function MessageList({ messages, customUserId, messageEndRef, selectedUser, setActive }) {
+function MessageList({ messages, customUserId, messageEndRef, selectedUser, setActive, closePickers }) {
+  const navigate = useNavigate(); // Initialize the navigate function
+
   const scrollToBottom = () => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -36,25 +39,42 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
 
   let lastMessageDate = null;
 
-  const handleClick = () => {
-    setActive(true); // Assuming this function makes the message list active
+  const handleClick = (event) => {
+    // Check if the target of the click is an emoji or document picker
+    const target = event.target;
+    if (target.closest('.picker-button')) {
+      return; // Prevent closing if a picker button is clicked
+    }
+
+    if (closePickers) {
+      closePickers(); // Close pickers first
+    }
+    setActive(true); // Activate chat area
+    navigate("/chat"); // Navigate to the chat area
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white relative" onClick={handleClick}>
+    <div
+      className="flex-1 bg-white relative"
+      style={{ height: "calc(100vh - 120px)", overflow: "hidden" }}
+      onClick={handleClick}
+    >
       <div className="sticky top-0 z-10 bg-white p-2 border-b">
         <p className="text-center text-gray-500">
           {selectedUser ? `Chat with ${selectedUser}` : "No user selected."}
         </p>
       </div>
 
-      <div className="p-4 pb-24">
+      <div
+        className="p-4 pb-24 overflow-y-auto"
+        style={{ height: "calc(100% - 56px)" }}
+      >
         {messages.length === 0 ? (
           <div className="text-center">
             <img
               src="Message.jpg" // Replace with your image URL
               alt="No messages illustration"
-              className="mt-4 mx-auto h-32 w-auto" // Adjust the height as needed
+              className="mt-4 mx-auto h-32 w-auto"
             />
           </div>
         ) : (

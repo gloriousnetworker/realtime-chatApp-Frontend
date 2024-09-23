@@ -35,7 +35,7 @@ function App() {
     <Router>
       <div className="App">
         {/* Add a button to request notification permission */}
-        <button onClick={handleRequestPermission}>Enable Notifications</button>
+        <button onClick={handleRequestPermission}>Click to Enable Notifications</button>
         
         <Routes>
           {isMaintenanceMode ? (

@@ -23,10 +23,8 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
 
   const onEmojiClick = (emojiData) => {
     setNewMessage((prevMessage) => prevMessage + emojiData.emoji);
-    setShowEmojiPicker(false);
   };
 
-  // Handlers for the file selection
   const handlePhotoSelect = () => {
     photoInputRef.current.click();
   };
@@ -42,37 +40,30 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
     }
   };
 
-  const handleLocationSelect = () => {
-    alert("Location selection not implemented yet!");
-  };
-
-  const handleContactSelect = () => {
-    alert("Contact selection not implemented yet!");
-  };
-
-  const handlePersonalCardSelect = () => {
-    alert("Personal details feature is not available now.");
-  };
-
-  // Handle key down events for line breaks and sending messages
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       if (e.shiftKey) {
-        // Allow line break on Shift + Enter
-        return;
+        return; // Allow line break on Shift + Enter
       } else {
         e.preventDefault(); // Prevent default action (new line) when Enter is pressed
         handleSendMessage();
       }
     }
   };
-  
+
+  const handleClickOnMessageArea = () => {
+    setShowEmojiPicker(false);
+    setShowFileOptions(false);
+  };
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white px-2 py-2 border-t flex items-center space-x-3 md:space-x-4 md:static md:bottom-auto md:w-auto">
       {/* Emoji button */}
       <button
-        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+        onClick={() => {
+          setShowEmojiPicker((prev) => !prev);
+          setShowFileOptions(false); // Close file options if opening emoji picker
+        }}
         className="text-gray-500"
       >
         <FontAwesomeIcon icon={faSmile} size="lg" />
@@ -83,7 +74,10 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
       {/* Document button with dropdown */}
       <div className="relative">
         <button
-          onClick={() => setShowFileOptions(!showFileOptions)}
+          onClick={() => {
+            setShowFileOptions((prev) => !prev);
+            setShowEmojiPicker(false); // Close emoji picker if opening file options
+          }}
           className="text-gray-500"
         >
           <FontAwesomeIcon icon={faPaperclip} size="lg" />
@@ -91,7 +85,7 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
 
         {/* File dropdown options */}
         {showFileOptions && (
-          <div className="absolute bottom-12 left-0 bg-white shadow-lg rounded-lg z-50 border border-gray-300">
+          <div className="absolute bottom-12 left-0 bg-white shadow-lg rounded-lg z-50 border border-gray-300 file-options">
             <ul className="space-y-2 p-2">
               <li
                 onClick={handlePhotoSelect}
@@ -106,21 +100,21 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
                 <FontAwesomeIcon icon={faFileAlt} className="mr-2" /> Document
               </li>
               <li
-                onClick={handleLocationSelect}
+                onClick={() => alert("Location selection not implemented yet!")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />{" "}
                 Location
               </li>
               <li
-                onClick={handleContactSelect}
+                onClick={() => alert("Contact selection not implemented yet!")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <FontAwesomeIcon icon={faAddressBook} className="mr-2" />{" "}
                 Contact
               </li>
               <li
-                onClick={handlePersonalCardSelect}
+                onClick={() => alert("Personal details feature is not available now.")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
                 <FontAwesomeIcon icon={faIdCard} className="mr-2" /> Personal
@@ -157,6 +151,7 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
         onChange={(e) => setNewMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         rows={1} // Start with one row
+        onClick={handleClickOnMessageArea} // Close pickers when clicking here
       />
 
       {/* Conditionally render Voice Recorder or Send Paper Plane based on input */}
@@ -173,7 +168,7 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="absolute bottom-12 left-0 md:left-auto md:right-8 z-50">
+        <div className="absolute bottom-12 left-0 md:left-auto md:right-8 z-50 emoji-picker">
           <Picker onEmojiClick={onEmojiClick} />
         </div>
       )}
