@@ -10,7 +10,7 @@ import Signup from "./auth/Signup";
 import Login from "./auth/Login";
 import ForgotPassword from "./auth/ForgotPassword"; 
 import Maintenance from "./pages/Maintenance";
-import { requestNotificationPermission, messaging } from "./firebase/firebase";
+import { messaging } from "./firebase/firebase"; // Removed unused requestNotificationPermission
 import { onMessage } from "firebase/messaging";
 
 function App() {
@@ -24,19 +24,9 @@ function App() {
     });
   }, []);
 
-  const handleRequestPermission = async () => {
-    const token = await requestNotificationPermission();
-    if (token) {
-      console.log("FCM Token received:", token);
-    }
-  };
-
   return (
     <Router>
       <div className="App">
-        {/* Add a button to request notification permission */}
-        <button onClick={handleRequestPermission}>Click to Enable Notifications</button>
-        
         <Routes>
           {isMaintenanceMode ? (
             <Route path="*" element={<Maintenance />} />

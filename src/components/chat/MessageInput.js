@@ -103,22 +103,19 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
                 onClick={() => alert("Location selection not implemented yet!")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
-                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />{" "}
-                Location
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" /> Location
               </li>
               <li
                 onClick={() => alert("Contact selection not implemented yet!")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
-                <FontAwesomeIcon icon={faAddressBook} className="mr-2" />{" "}
-                Contact
+                <FontAwesomeIcon icon={faAddressBook} className="mr-2" /> Contact
               </li>
               <li
                 onClick={() => alert("Personal details feature is not available now.")}
                 className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
               >
-                <FontAwesomeIcon icon={faIdCard} className="mr-2" /> Personal
-                card
+                <FontAwesomeIcon icon={faIdCard} className="mr-2" /> Personal card
               </li>
             </ul>
           </div>
@@ -145,7 +142,7 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
 
       {/* Message input box as a textarea for line breaks */}
       <textarea
-        className="flex-1 p-2 bg-transparent text-sm md:text-base focus:outline-none resize-none"
+        className="flex-1 p-2 bg-transparent text-sm md:text-base focus:outline-none resize-none max-h-24" // Limit height with max-h-24
         placeholder="Type a message..."
         value={newMessage}
         onChange={(e) => setNewMessage(e.target.value)}

@@ -140,11 +140,11 @@ function Chat() {
     };
 
     // Add event listener for browser back button
-    window.addEventListener('popstate', handleBackButton);
+    window.addEventListener("popstate", handleBackButton);
 
     return () => {
       // Cleanup listener on component unmount
-      window.removeEventListener('popstate', handleBackButton);
+      window.removeEventListener("popstate", handleBackButton);
     };
   }, [navigate]);
 
@@ -182,17 +182,16 @@ function Chat() {
   };
 
   useEffect(() => {
-  if (isChatActive) {
-    // Do something when the chat is active, e.g., logging
-    console.log("Chat is active");
-  }
-}, [isChatActive]);
-  
+    if (isChatActive) {
+      // Do something when the chat is active, e.g., logging
+      console.log("Chat is active");
+    }
+  }, [isChatActive]);
 
   // Subscribe to messages when chatId changes
   useEffect(() => {
     if (!chatId) return;
-  
+
     const unsubscribe = onSnapshot(
       collection(db, "chats", chatId, "messages"),
       (snapshot) => {
@@ -200,26 +199,28 @@ function Chat() {
           id: doc.id,
           ...doc.data(),
         }));
-  
+
         setMessages(
           fetchedMessages.sort(
             (a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()
           )
         );
-  
+
         // Track unread messages for the selected user
         if (selectedUser && document.visibilityState === "hidden") {
           const unreadCount = fetchedMessages.filter(
             (msg) => msg.recipientId === customUserId && !msg.isRead
           ).length;
-  
+
           if (unreadCount > 0) {
             setUnreadMessagesMap((prev) => ({
               ...prev,
               [selectedUser]: unreadCount, // Add unread count for selected user
             }));
-  
-            new Notification(`You have ${unreadCount} new message(s) from ${selectedUser}`);
+
+            new Notification(
+              `You have ${unreadCount} new message(s) from ${selectedUser}`
+            );
           }
         }
       },
@@ -227,14 +228,14 @@ function Chat() {
         console.error("Error fetching messages:", error);
       }
     );
-  
+
     return () => unsubscribe();
   }, [chatId, selectedUser, customUserId]);
-  
+
   // Mark messages as read when a chat is opened
   useEffect(() => {
     if (!selectedUser) return;
-  
+
     // Reset unread messages for the selected user
     setUnreadMessagesMap((prev) => ({
       ...prev,
@@ -259,21 +260,20 @@ function Chat() {
 
       {/* Sidebar */}
       <UserSidebar
-  showSidebar={showSidebar}
-  users={filteredUsers}
-  messages={messages}
-  customUserId={customUserId}
-  selectedUser={selectedUser}
-  handleUserClick={handleUserClick}
-  searchTerm={searchTerm}
-  handleSearch={handleSearch}
-  setShowSidebar={setShowSidebar}
-  unreadMessagesMap={unreadMessagesMap} // Pass this prop
-/>
-
+        showSidebar={showSidebar}
+        users={filteredUsers}
+        messages={messages}
+        customUserId={customUserId}
+        selectedUser={selectedUser}
+        handleUserClick={handleUserClick}
+        searchTerm={searchTerm}
+        handleSearch={handleSearch}
+        setShowSidebar={setShowSidebar}
+        unreadMessagesMap={unreadMessagesMap} // Pass this prop
+      />
 
       {/* Chat area */}
-      <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col h-screen p-4 ml-auto">
+      <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
         {/* Message list */}
         <MessageList
           messages={messages}
