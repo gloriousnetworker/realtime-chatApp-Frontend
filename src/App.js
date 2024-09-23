@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Route,
@@ -8,33 +8,44 @@ import {
 import Chat from "./pages/Chat";
 import Signup from "./auth/Signup";
 import Login from "./auth/Login";
-import ForgotPassword from "./auth/ForgotPassword"; // Import the Forgot Password page
-import Maintenance from "./pages/Maintenance"; // Import the Maintenance page
+import ForgotPassword from "./auth/ForgotPassword"; 
+import Maintenance from "./pages/Maintenance";
+import { requestNotificationPermission, messaging } from "./firebase/firebase";
+import { onMessage } from "firebase/messaging";
 
 function App() {
-  // State to control maintenance mode (true means maintenance mode is on)
-  const [isMaintenanceMode] = useState(false); // Remove the setIsMaintenanceMode
+  const [isMaintenanceMode] = useState(false);
+
+  useEffect(() => {
+    // Listen for messages when the app is in the foreground
+    onMessage(messaging, (payload) => {
+      console.log("Message received. ", payload);
+      alert(`Notification received: ${payload.notification.title} - ${payload.notification.body}`);
+    });
+  }, []);
+
+  const handleRequestPermission = async () => {
+    const token = await requestNotificationPermission();
+    if (token) {
+      console.log("FCM Token received:", token);
+    }
+  };
 
   return (
     <Router>
       <div className="App">
+        {/* Add a button to request notification permission */}
+        <button onClick={handleRequestPermission}>Enable Notifications</button>
+        
         <Routes>
-          {/* Check if maintenance mode is on */}
           {isMaintenanceMode ? (
-            // If in maintenance mode, show only the maintenance page
             <Route path="*" element={<Maintenance />} />
           ) : (
-            // Normal routes when not in maintenance mode
             <>
-              <Route path="/" element={<Navigate to="/login" />} />{" "}
-              {/* Default to Login */}
+              <Route path="/" element={<Navigate to="/login" />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
-              <Route
-                path="/forgot-password"
-                element={<ForgotPassword />}
-              />{" "}
-              {/* Forgot Password Route */}
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/chat" element={<Chat />} />
             </>
           )}
