@@ -1,24 +1,76 @@
-import React, { useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSmile, faPaperclip } from '@fortawesome/free-solid-svg-icons';
-import Picker from 'emoji-picker-react';
+import React, { useState, useRef } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faSmile,
+  faPaperclip,
+  faMicrophone,
+  faPaperPlane,
+  faPhotoVideo,
+  faFileAlt,
+  faMapMarkerAlt,
+  faAddressBook,
+  faIdCard,
+} from "@fortawesome/free-solid-svg-icons";
+import Picker from "emoji-picker-react";
 
-function MessageInput({
-  newMessage,
-  setNewMessage,
-  handleSendMessage,
-  handleFileSend,
-  handleKeyDown,
-}) {
+function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showFileOptions, setShowFileOptions] = useState(false);
+
+  // Refs for file inputs
+  const photoInputRef = useRef(null);
+  const documentInputRef = useRef(null);
 
   const onEmojiClick = (emojiData) => {
     setNewMessage((prevMessage) => prevMessage + emojiData.emoji);
     setShowEmojiPicker(false);
   };
 
+  // Handlers for the file selection
+  const handlePhotoSelect = () => {
+    photoInputRef.current.click();
+  };
+
+  const handleDocumentSelect = () => {
+    documentInputRef.current.click();
+  };
+
+  const handleFileSend = (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+      console.log(files); // Replace with your upload logic
+    }
+  };
+
+  const handleLocationSelect = () => {
+    alert("Location selection not implemented yet!");
+  };
+
+  const handleContactSelect = () => {
+    alert("Contact selection not implemented yet!");
+  };
+
+  const handlePersonalCardSelect = () => {
+    alert("Personal details feature is not available now.");
+  };
+
+  // Handle key down events for line breaks and sending messages
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      if (e.shiftKey) {
+        // Allow line break on Shift + Enter
+        return;
+      } else {
+        e.preventDefault(); // Prevent default action (new line) when Enter is pressed
+        handleSendMessage();
+      }
+    }
+  };
+  
+
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-white px-2 py-2 border-t flex items-center space-x-2">
+    <div className="fixed bottom-0 left-0 w-full bg-white px-2 py-2 border-t flex items-center space-x-3 md:space-x-4 md:static md:bottom-auto md:w-auto">
+      {/* Emoji button */}
       <button
         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
         className="text-gray-500"
@@ -26,35 +78,102 @@ function MessageInput({
         <FontAwesomeIcon icon={faSmile} size="lg" />
       </button>
 
+      <div className="mx-2"></div>
+
+      {/* Document button with dropdown */}
+      <div className="relative">
+        <button
+          onClick={() => setShowFileOptions(!showFileOptions)}
+          className="text-gray-500"
+        >
+          <FontAwesomeIcon icon={faPaperclip} size="lg" />
+        </button>
+
+        {/* File dropdown options */}
+        {showFileOptions && (
+          <div className="absolute bottom-12 left-0 bg-white shadow-lg rounded-lg z-50 border border-gray-300">
+            <ul className="space-y-2 p-2">
+              <li
+                onClick={handlePhotoSelect}
+                className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <FontAwesomeIcon icon={faPhotoVideo} className="mr-2" /> Photos
+              </li>
+              <li
+                onClick={handleDocumentSelect}
+                className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <FontAwesomeIcon icon={faFileAlt} className="mr-2" /> Document
+              </li>
+              <li
+                onClick={handleLocationSelect}
+                className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2" />{" "}
+                Location
+              </li>
+              <li
+                onClick={handleContactSelect}
+                className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <FontAwesomeIcon icon={faAddressBook} className="mr-2" />{" "}
+                Contact
+              </li>
+              <li
+                onClick={handlePersonalCardSelect}
+                className="cursor-pointer flex items-center p-2 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <FontAwesomeIcon icon={faIdCard} className="mr-2" /> Personal
+                card
+              </li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Hidden file input for photos */}
       <input
         type="file"
+        accept="image/*"
+        ref={photoInputRef}
         className="hidden"
-        id="fileInput"
         onChange={handleFileSend}
       />
-      <label htmlFor="fileInput" className="text-gray-500 cursor-pointer">
-        <FontAwesomeIcon icon={faPaperclip} size="lg" />
-      </label>
 
+      {/* Hidden file input for documents */}
       <input
-        type="text"
-        className="flex-1 p-1 border rounded-lg"
-        placeholder="Type your message..."
+        type="file"
+        accept=".pdf,.doc,.docx,.txt"
+        ref={documentInputRef}
+        className="hidden"
+        onChange={handleFileSend}
+      />
+
+      {/* Message input box as a textarea for line breaks */}
+      <textarea
+        className="flex-1 p-2 bg-transparent text-sm md:text-base focus:outline-none resize-none"
+        placeholder="Type a message..."
         value={newMessage}
         onChange={(e) => setNewMessage(e.target.value)}
         onKeyDown={handleKeyDown}
+        rows={1} // Start with one row
       />
 
+      {/* Conditionally render Voice Recorder or Send Paper Plane based on input */}
       <button
         onClick={handleSendMessage}
-        className="p-1 bg-blue-500 text-white rounded-lg text-xs" // Adjusted padding and font size
+        className="p-2 bg-blue-500 text-white rounded-lg"
+        disabled={!newMessage.trim()}
       >
-        Send
+        <FontAwesomeIcon
+          icon={newMessage.trim() ? faPaperPlane : faMicrophone}
+          size="lg"
+        />
       </button>
 
       {/* Emoji Picker */}
       {showEmojiPicker && (
-        <div className="absolute bottom-20 left-0 right-0 mx-auto z-50">
+        <div className="absolute bottom-12 left-0 md:left-auto md:right-8 z-50">
           <Picker onEmojiClick={onEmojiClick} />
         </div>
       )}

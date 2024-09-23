@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 
 const UserSidebar = ({
@@ -11,6 +11,7 @@ const UserSidebar = ({
 }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [unreadMessagesMap, setUnreadMessagesMap] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -31,6 +32,36 @@ const UserSidebar = ({
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (!customUserId) return;
+
+    // Firestore listener to track unread messages for the current user
+    const q = query(
+      collection(db, 'messages'),
+      where('recipientId', '==', customUserId),
+      where('isRead', '==', false)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newUnreadMessagesMap = {};
+
+      snapshot.docs.forEach((doc) => {
+        const { senderId } = doc.data();
+
+        if (!newUnreadMessagesMap[senderId]) {
+          newUnreadMessagesMap[senderId] = 0;
+        }
+
+        newUnreadMessagesMap[senderId] += 1; // Count unread messages per sender
+      });
+
+      setUnreadMessagesMap(newUnreadMessagesMap);
+    });
+
+    // Clean up the listener when the component unmounts
+    return () => unsubscribe();
+  }, [customUserId]);
+
   const handleSearch = (e) => {
     const searchTerm = e.target.value.toLowerCase();
     setSearchTerm(searchTerm);
@@ -40,6 +71,54 @@ const UserSidebar = ({
     );
     setFilteredUsers(filtered);
   };
+
+  // Sort users based on recent message activity
+  // Sort users based on recent message activity
+const sortedUsers = filteredUsers.sort((a, b) => {
+  const lastMessageA = messages
+    .filter(
+      (msg) =>
+        msg.senderId === a.customUserId || msg.recipientId === a.customUserId
+    )
+    .sort((x, y) => {
+      const xTimestamp = x.timestamp?.toMillis
+        ? x.timestamp.toMillis()
+        : new Date(x.timestamp).getTime(); // Handle if it's not a Firestore Timestamp
+      const yTimestamp = y.timestamp?.toMillis
+        ? y.timestamp.toMillis()
+        : new Date(y.timestamp).getTime();
+      return yTimestamp - xTimestamp;
+    })[0];
+
+  const lastMessageB = messages
+    .filter(
+      (msg) =>
+        msg.senderId === b.customUserId || msg.recipientId === b.customUserId
+    )
+    .sort((x, y) => {
+      const xTimestamp = x.timestamp?.toMillis
+        ? x.timestamp.toMillis()
+        : new Date(x.timestamp).getTime();
+      const yTimestamp = y.timestamp?.toMillis
+        ? y.timestamp.toMillis()
+        : new Date(y.timestamp).getTime();
+      return yTimestamp - xTimestamp;
+    })[0];
+
+  const lastTimestampA = lastMessageA?.timestamp?.toMillis
+    ? lastMessageA.timestamp.toMillis()
+    : lastMessageA
+    ? new Date(lastMessageA.timestamp).getTime()
+    : 0;
+  const lastTimestampB = lastMessageB?.timestamp?.toMillis
+    ? lastMessageB.timestamp.toMillis()
+    : lastMessageB
+    ? new Date(lastMessageB.timestamp).getTime()
+    : 0;
+
+  return lastTimestampB - lastTimestampA;
+});
+
 
   return (
     <div
@@ -56,7 +135,6 @@ const UserSidebar = ({
         </div>
       )}
 
-      {/* Search Bar (Visible on both mobile and desktop) */}
       <input
         type="text"
         className="w-full p-3 rounded-lg border border-gray-300 mb-4"
@@ -65,26 +143,13 @@ const UserSidebar = ({
         onChange={handleSearch}
       />
 
-      {/* Display filtered users */}
       <div className="mt-4 w-full">
         <h3 className="text-lg font-semibold mb-4 text-gray-700">Users:</h3>
-        {filteredUsers.length === 0 ? (
+        {sortedUsers.length === 0 ? (
           <p className="text-sm text-gray-500">No users found</p>
         ) : (
-          filteredUsers.slice(0, 10).map((user) => {
-            const unreadMessagesSent = messages.some(
-              (message) =>
-                message.senderId === customUserId &&
-                message.recipientId === user.customUserId &&
-                !message.isRead
-            );
-
-            const unreadMessagesReceived = messages.some(
-              (message) =>
-                message.recipientId === customUserId &&
-                message.senderId === user.customUserId &&
-                !message.isRead
-            );
+          sortedUsers.slice(0, 10).map((user) => {
+            const unreadMessagesCount = unreadMessagesMap[user.customUserId] || 0;
 
             return (
               <div
@@ -95,14 +160,13 @@ const UserSidebar = ({
                 onClick={() => handleUserClick(user.customUserId)}
               >
                 <p className="text-gray-700 font-medium">{user.customUserId}</p>
-                <div className="flex items-center mt-1">
-                  {unreadMessagesSent && (
-                    <span className="ml-2 bg-red-500 rounded-full h-3 w-3 inline-block"></span>
-                  )}
-                  {unreadMessagesReceived && (
-                    <span className="ml-2 bg-green-500 rounded-full h-3 w-3 inline-block"></span>
-                  )}
-                </div>
+
+                {/* Unread Messages Indicator */}
+                {unreadMessagesCount > 0 && (
+                  <span className="ml-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs">
+                    {unreadMessagesCount} unread
+                  </span>
+                )}
               </div>
             );
           })
