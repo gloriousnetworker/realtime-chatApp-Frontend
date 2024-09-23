@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { format, isToday, isYesterday } from "date-fns";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
@@ -7,15 +7,15 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
   const [isAtBottom, setIsAtBottom] = useState(true);
   const messageListRef = useRef(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (isAtBottom) {
       messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, [isAtBottom, messageEndRef]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   const handleScroll = () => {
     const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
