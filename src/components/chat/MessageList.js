@@ -1,17 +1,26 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { format, isToday, isYesterday } from "date-fns";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 function MessageList({ messages, customUserId, messageEndRef, selectedUser, setActive, closePickers }) {
   const navigate = useNavigate(); // Initialize the navigate function
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const messageListRef = useRef(null);
 
   const scrollToBottom = () => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isAtBottom) {
+      messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const handleScroll = () => {
+    const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
+    setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 1);
+  };
 
   const formatDateLabel = (timestamp) => {
     const messageDate =
@@ -40,7 +49,6 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
   let lastMessageDate = null;
 
   const handleClick = (event) => {
-    // Check if the target of the click is an emoji or document picker
     const target = event.target;
     if (target.closest('.picker-button')) {
       return; // Prevent closing if a picker button is clicked
@@ -66,8 +74,10 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
       </div>
 
       <div
+        ref={messageListRef}
         className="p-4 pb-24 overflow-y-auto"
         style={{ height: "calc(100% - 56px)" }}
+        onScroll={handleScroll}
       >
         {messages.length === 0 ? (
           <div className="text-center">
