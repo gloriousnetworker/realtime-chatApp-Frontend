@@ -35,7 +35,7 @@ const UserSidebar = ({
   useEffect(() => {
     if (!customUserId) return;
 
-    // Firestore listener to track unread messages for all chats of the current user
+    // Firestore listener to track unread messages for the current user
     const q = query(
       collection(db, 'messages'),
       where('recipientId', '==', customUserId),
@@ -44,22 +44,19 @@ const UserSidebar = ({
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newUnreadMessagesMap = {};
-      
+
       snapshot.docs.forEach((doc) => {
         const { senderId } = doc.data();
-        
-        console.log(`New unread message from ${senderId}`); // Debug log
+
         if (!newUnreadMessagesMap[senderId]) {
           newUnreadMessagesMap[senderId] = 0;
         }
-    
+
         newUnreadMessagesMap[senderId] += 1; // Count unread messages per sender
       });
-    
-      console.log('Unread messages map:', newUnreadMessagesMap); // Debug log
+
       setUnreadMessagesMap(newUnreadMessagesMap);
     });
-    
 
     // Clean up the listener when the component unmounts
     return () => unsubscribe();
@@ -76,47 +73,52 @@ const UserSidebar = ({
   };
 
   // Sort users based on recent message activity
-  const sortedUsers = filteredUsers.sort((a, b) => {
-    const lastMessageA = messages
-      .filter(
-        (msg) =>
-          msg.senderId === a.customUserId || msg.recipientId === a.customUserId
-      )
-      .sort((x, y) => {
-        const xTimestamp = x.timestamp?.toMillis
-          ? x.timestamp.toMillis()
-          : new Date(x.timestamp).getTime();
-        const yTimestamp = y.timestamp?.toMillis
-          ? y.timestamp.toMillis()
-          : new Date(y.timestamp).getTime();
-        return yTimestamp - xTimestamp;
-      })[0];
-  
-    const lastMessageB = messages
-      .filter(
-        (msg) =>
-          msg.senderId === b.customUserId || msg.recipientId === b.customUserId
-      )
-      .sort((x, y) => {
-        const xTimestamp = x.timestamp?.toMillis
-          ? x.timestamp.toMillis()
-          : new Date(x.timestamp).getTime();
-        const yTimestamp = y.timestamp?.toMillis
-          ? y.timestamp.toMillis()
-          : new Date(y.timestamp).getTime();
-        return yTimestamp - xTimestamp;
-      })[0];
-  
-    const lastTimestampA = lastMessageA?.timestamp
-      ? lastMessageA.timestamp.toMillis ? lastMessageA.timestamp.toMillis() : new Date(lastMessageA.timestamp).getTime()
-      : 0;
-    const lastTimestampB = lastMessageB?.timestamp
-      ? lastMessageB.timestamp.toMillis ? lastMessageB.timestamp.toMillis() : new Date(lastMessageB.timestamp).getTime()
-      : 0;
-  
-    return lastTimestampB - lastTimestampA;
-  });
-  
+  // Sort users based on recent message activity
+const sortedUsers = filteredUsers.sort((a, b) => {
+  const lastMessageA = messages
+    .filter(
+      (msg) =>
+        msg.senderId === a.customUserId || msg.recipientId === a.customUserId
+    )
+    .sort((x, y) => {
+      const xTimestamp = x.timestamp?.toMillis
+        ? x.timestamp.toMillis()
+        : new Date(x.timestamp).getTime(); // Handle if it's not a Firestore Timestamp
+      const yTimestamp = y.timestamp?.toMillis
+        ? y.timestamp.toMillis()
+        : new Date(y.timestamp).getTime();
+      return yTimestamp - xTimestamp;
+    })[0];
+
+  const lastMessageB = messages
+    .filter(
+      (msg) =>
+        msg.senderId === b.customUserId || msg.recipientId === b.customUserId
+    )
+    .sort((x, y) => {
+      const xTimestamp = x.timestamp?.toMillis
+        ? x.timestamp.toMillis()
+        : new Date(x.timestamp).getTime();
+      const yTimestamp = y.timestamp?.toMillis
+        ? y.timestamp.toMillis()
+        : new Date(y.timestamp).getTime();
+      return yTimestamp - xTimestamp;
+    })[0];
+
+  const lastTimestampA = lastMessageA?.timestamp?.toMillis
+    ? lastMessageA.timestamp.toMillis()
+    : lastMessageA
+    ? new Date(lastMessageA.timestamp).getTime()
+    : 0;
+  const lastTimestampB = lastMessageB?.timestamp?.toMillis
+    ? lastMessageB.timestamp.toMillis()
+    : lastMessageB
+    ? new Date(lastMessageB.timestamp).getTime()
+    : 0;
+
+  return lastTimestampB - lastTimestampA;
+});
+
 
   return (
     <div
@@ -152,21 +154,14 @@ const UserSidebar = ({
             return (
               <div
                 key={user.id}
-                className={`relative p-4 mb-3 bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-all shadow-md ${
+                className={`p-4 mb-3 bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-all shadow-md ${
                   selectedUser === user.customUserId ? 'bg-gray-300' : ''
                 }`}
                 onClick={() => handleUserClick(user.customUserId)}
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-gray-700 font-medium">{user.customUserId}</p>
+                <p className="text-gray-700 font-medium">{user.customUserId}</p>
 
-                  {/* Green dot to indicate new unread messages */}
-                  {unreadMessagesCount > 0 && (
-                    <div className="absolute top-2 right-2 h-3 w-3 rounded-full bg-green-500"></div>
-                  )}
-                </div>
-
-                {/* Unread Messages Count */}
+                {/* Unread Messages Indicator */}
                 {unreadMessagesCount > 0 && (
                   <span className="ml-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs">
                     {unreadMessagesCount} unread

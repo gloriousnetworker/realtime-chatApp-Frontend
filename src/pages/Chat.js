@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../firebase/firebase";
-import { doc } from "firebase/firestore";
-
 import {
   collection,
   addDoc,
@@ -22,7 +20,7 @@ function Chat() {
   useAuthGuard();
   const navigate = useNavigate();
 
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([]); // Updated: Added setMessages
   const [newMessage, setNewMessage] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,58 +29,45 @@ function Chat() {
   const [isChatActive, setIsChatActive] = useState(false);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [chatId, setChatId] = useState(null);
+  const [chatId, setChatId] = useState(null); // Initialize chatId with useState
   const [unreadMessagesMap, setUnreadMessagesMap] = useState({});
   const messageEndRef = useRef(null);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const calculateUnreadCount = () => {
-    const unreadMessages = messages.filter(
-      (message) => message.senderId !== customUserId && !message.isRead
-    );
-    setUnreadCount(unreadMessages.length);
-  };
-
-  useEffect(() => {
-    calculateUnreadCount();
-  }, [messages]);
 
   const { customUserId, users, loading } =
     useUserInitialization(setFilteredUsers); // Get initialized user data
 
+  // Add console log to debug customUserId in Chat
   console.log("customUserId in Chat:", customUserId);
 
-  useEffect(() => {
-    if (Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-  }, []);
-  
   const handleSendMessage = async () => {
     if (newMessage.trim() === "" || !chatId) return;
 
+    // Create a temporary message with a local timestamp and a temporary ID
     const temporaryMessage = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // Temporary ID based on current time
       text: newMessage,
-      timestamp: new Date(),
+      timestamp: new Date(), // Client-side timestamp
       senderId: customUserId,
       recipientId: selectedUser,
       isRead: false,
       chatId,
     };
 
+    // Optimistically add the message to the local state before sending
     setMessages((prevMessages) => [...prevMessages, temporaryMessage]);
     setNewMessage("");
 
     try {
+      // Send the message to Firestore with the real server timestamp
       const messageRef = await addDoc(
         collection(db, "chats", chatId, "messages"),
         {
           ...temporaryMessage,
-          timestamp: serverTimestamp(),
+          timestamp: serverTimestamp(), // Firestore server-side timestamp
         }
       );
 
+      // After the message is saved to Firestore, update the local state with the real message ID and timestamp
       setMessages((prevMessages) =>
         prevMessages.map((msg) =>
           msg.id === temporaryMessage.id
@@ -96,6 +81,7 @@ function Chat() {
       );
     } catch (error) {
       console.error("Error sending message:", error);
+      // Optionally handle errors and remove the optimistic message if it fails
     }
   };
 
@@ -132,12 +118,14 @@ function Chat() {
   const handleUserClick = (userId) => {
     setSelectedUser(userId);
 
+    // Generate chatId based on both users
     const newChatId =
       customUserId < userId
         ? `${customUserId}_${userId}`
         : `${userId}_${customUserId}`;
     setChatId(newChatId);
 
+    // Add console log to debug chatId
     console.log("ChatId after user click:", newChatId);
 
     if (window.innerWidth < 768) {
@@ -147,13 +135,15 @@ function Chat() {
 
   useEffect(() => {
     const handleBackButton = (event) => {
-      event.preventDefault();
-      navigate(-1);
+      event.preventDefault(); // Prevent default back button behavior
+      navigate(-1); // Navigate one step back
     };
 
+    // Add event listener for browser back button
     window.addEventListener("popstate", handleBackButton);
 
     return () => {
+      // Cleanup listener on component unmount
       window.removeEventListener("popstate", handleBackButton);
     };
   }, [navigate]);
@@ -193,112 +183,65 @@ function Chat() {
 
   useEffect(() => {
     if (isChatActive) {
+      // Do something when the chat is active, e.g., logging
       console.log("Chat is active");
     }
   }, [isChatActive]);
 
   // Subscribe to messages when chatId changes
+  useEffect(() => {
+    if (!chatId) return;
+
+    const unsubscribe = onSnapshot(
+      collection(db, "chats", chatId, "messages"),
+      (snapshot) => {
+        const fetchedMessages = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setMessages(
+          fetchedMessages.sort(
+            (a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()
+          )
+        );
+
+        // Track unread messages for the selected user
+        if (selectedUser && document.visibilityState === "hidden") {
+          const unreadCount = fetchedMessages.filter(
+            (msg) => msg.recipientId === customUserId && !msg.isRead
+          ).length;
+
+          if (unreadCount > 0) {
+            setUnreadMessagesMap((prev) => ({
+              ...prev,
+              [selectedUser]: unreadCount, // Add unread count for selected user
+            }));
+
+            new Notification(
+              `You have ${unreadCount} new message(s) from ${selectedUser}`
+            );
+          }
+        }
+      },
+      (error) => {
+        console.error("Error fetching messages:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [chatId, selectedUser, customUserId]);
+
   // Mark messages as read when a chat is opened
   useEffect(() => {
     if (!selectedUser) return;
-  
+
     // Reset unread messages for the selected user
     setUnreadMessagesMap((prev) => ({
       ...prev,
       [selectedUser]: 0,
     }));
   }, [selectedUser]);
-  
-
-// Subscribe to messages when chatId changes
-useEffect(() => {
-  if (!chatId) return;
-
-  const unsubscribe = onSnapshot(
-    collection(db, "chats", chatId, "messages"),
-    (snapshot) => {
-      const fetchedMessages = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setMessages(
-        fetchedMessages.sort(
-          (a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()
-        )
-      );
-
-      // Track unread messages for the selected user
-      if (selectedUser && document.visibilityState === "hidden") {
-        const unreadCount = fetchedMessages.filter(
-          (msg) => msg.recipientId === customUserId && !msg.isRead
-        ).length;
-
-        if (unreadCount > 0) {
-          setUnreadMessagesMap((prev) => ({
-            ...prev,
-            [selectedUser]: unreadCount,
-          }));
-
-          if (Notification.permission === "granted") {
-            new Notification(
-              `You have ${unreadCount} new message(s) from ${selectedUser}`
-            );
-          }
-        }
-      }
-
-      // Mark messages as read when the chat is active and opened
-      const markMessagesAsRead = async () => {
-        const unreadMessages = fetchedMessages.filter(
-          (message) =>
-            message.recipientId === customUserId && !message.isRead
-        );
-      
-        if (unreadMessages.length > 0) {
-          try {
-            const batch = db.batch();
-            unreadMessages.forEach((message) => {
-              const messageRef = doc(
-                db,
-                "chats",
-                chatId,
-                "messages",
-                message.id
-              );
-              batch.update(messageRef, { isRead: true });
-            });
-            await batch.commit();
-            console.log("Messages marked as read in Firestore");
-      
-            // Reset unread message count locally
-            setUnreadMessagesMap((prev) => ({
-              ...prev,
-              [selectedUser]: 0, // Resetting count after marking as read
-            }));
-          } catch (error) {
-            console.error("Error marking messages as read:", error);
-          }
-        }
-      };
-      
-
-      if (selectedUser && fetchedMessages.length > 0) {
-        console.log("Marking messages as read for:", selectedUser);
-        markMessagesAsRead();
-      }
-      
-    },
-    (error) => {
-      console.error("Error fetching messages:", error);
-    }
-  );
-
-  return () => unsubscribe();
-}, [chatId, selectedUser, customUserId]);
-
-
-  
 
   if (loading) {
     return <div>Loading...</div>;
@@ -312,7 +255,6 @@ useEffect(() => {
         setShowSearch={setShowSearch}
         handleLogout={handleLogout}
         setShowSidebar={setShowSidebar}
-        unreadCount={unreadCount}  
         goBack={() => navigate(-1)}
       />
 
@@ -327,7 +269,6 @@ useEffect(() => {
         searchTerm={searchTerm}
         handleSearch={handleSearch}
         setShowSidebar={setShowSidebar}
-        setUnreadCount={setUnreadCount}
         unreadMessagesMap={unreadMessagesMap} // Pass this prop
       />
 
@@ -341,24 +282,23 @@ useEffect(() => {
           selectedUser={selectedUser}
           setActive={handleChatAreaClick}
           setShowEmojiPicker={setShowEmojiPicker}
-          setUnreadCount={setUnreadCount}
-        unreadMessagesMap={unreadMessagesMap}
-        unreadCount={unreadCount}  
         />
 
-        {/* Input area */}
-        <div className="relative">
-          {showEmojiPicker && <EmojiPicker onEmojiClick={onEmojiClick} />}
-          <MessageInput
-            newMessage={newMessage}
-            handleFileSend={handleFileSend}
-            handleKeyDown={handleKeyDown}
-            handleSendMessage={handleSendMessage}
-            setNewMessage={setNewMessage}
-            setShowEmojiPicker={setShowEmojiPicker}
-          />
-        </div>
+        {/* Message input */}
+        <MessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          handleFileSend={handleFileSend}
+          handleKeyDown={handleKeyDown}
+          setShowEmojiPicker={setShowEmojiPicker}
+          customUserId={customUserId}
+          chatId={chatId} // Ensure chatId is passed
+        />
       </div>
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && <EmojiPicker onEmojiClick={onEmojiClick} />}
     </div>
   );
 }
