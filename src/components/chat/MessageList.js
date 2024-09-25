@@ -1,29 +1,34 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
-function MessageList({ messages, customUserId, selectedUser, setActive, closePickers }) {
-  const navigate = useNavigate();
+function MessageList({
+  messages,
+  customUserId,
+  messageEndRef,
+  selectedUser,
+  setActive,
+  closePickers,
+}) {
+  const navigate = useNavigate(); // Initialize the navigate function
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const messageListRef = useRef(null);
-  const messageEndRef = useRef(null); // Initialize messageEndRef here
 
-  // Scroll to the bottom of the messages
   const scrollToBottom = useCallback(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+    if (isAtBottom) {
+      messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [isAtBottom, messageEndRef]);
 
-  // Trigger scrollToBottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Handle user scrolling to determine if they're at the bottom
   const handleScroll = () => {
-    // const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
-    // Optionally perform some action if needed when user scrolls
+    const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
+    setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 1);
   };
 
-  // Format date labels
   const formatDateLabel = (timestamp) => {
     const messageDate =
       timestamp instanceof Date
@@ -37,7 +42,6 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
     return format(messageDate, "MMMM dd, yyyy");
   };
 
-  // Format message time
   const formatMessageTime = (timestamp) => {
     const messageDate =
       timestamp instanceof Date
@@ -51,7 +55,6 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
 
   let lastMessageDate = null;
 
-  // Handle click events for interacting with the chat area
   const handleClick = (event) => {
     const target = event.target;
     if (target.closest(".picker-button")) {
@@ -71,12 +74,6 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
       style={{ height: "calc(100vh - 120px)", overflow: "hidden" }}
       onClick={handleClick}
     >
-      <div className="sticky top-0 z-10 bg-white p-2 border-b">
-        <p className="text-center text-gray-500">
-          {selectedUser ? `Chat with ${selectedUser}` : "No user selected."}
-        </p>
-      </div>
-
       <div
         ref={messageListRef}
         className="p-4 pb-24 overflow-y-auto"
@@ -84,7 +81,7 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
         onScroll={handleScroll}
       >
         {messages.length === 0 ? (
-          <div className="text-center">
+          <div className="text-center mt-16">
             <img
               src="Message.jpg" // Replace with your image URL
               alt="No messages illustration"
@@ -129,7 +126,13 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
                     <p className="break-words whitespace-pre-wrap">
                       {message.text}
                     </p>
-                    <div className={`text-xs ${message.senderId === customUserId ? "text-white" : "text-gray-800"} mt-1`}>
+                    <div
+                      className={`text-xs ${
+                        message.senderId === customUserId
+                          ? "text-white"
+                          : "text-gray-800"
+                      } mt-1`}
+                    >
                       {formatMessageTime(message.timestamp)}
                     </div>
                   </div>
@@ -138,7 +141,6 @@ function MessageList({ messages, customUserId, selectedUser, setActive, closePic
             );
           })
         )}
-        {/* Ensure this is positioned at the end of the message list */}
         <div ref={messageEndRef} />
       </div>
     </div>

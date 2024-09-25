@@ -256,9 +256,10 @@ function Chat() {
         handleLogout={handleLogout}
         setShowSidebar={setShowSidebar}
         goBack={() => navigate(-1)}
+        selectedUser={selectedUser} // Pass selectedUser prop
         className="flex justify-between items-center px-4 py-2 border-b bg-gray-100"
       />
-  
+
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <UserSidebar
@@ -274,7 +275,7 @@ function Chat() {
           unreadMessagesMap={unreadMessagesMap} // Pass this prop
           className="overflow-auto h-full"
         />
-  
+
         {/* Chat area */}
         <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
           {/* Message list */}
@@ -285,9 +286,8 @@ function Chat() {
             selectedUser={selectedUser}
             setActive={handleChatAreaClick}
             setShowEmojiPicker={setShowEmojiPicker}
-            className="flex-1 overflow-auto"
           />
-  
+
           {/* Message input */}
           <MessageInput
             newMessage={newMessage}
@@ -301,12 +301,11 @@ function Chat() {
           />
         </div>
       </div>
-  
+
       {/* Emoji Picker */}
       {showEmojiPicker && <EmojiPicker onEmojiClick={onEmojiClick} />}
     </div>
   );
-  
 }
 
 export default Chat;
