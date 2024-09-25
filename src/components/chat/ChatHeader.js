@@ -3,26 +3,29 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faSignOutAlt, faBell } from '@fortawesome/free-solid-svg-icons';
 
 function ChatHeader({ setShowSidebar, handleLogout, selectedUser, unreadCount }) {
+  // Debugging: check the value of selectedUser
+  console.log('Selected User:', selectedUser);
+
   return (
-    <header className="flex items-center justify-between p-4 bg-white shadow-md border-b fixed top-0 left-0 right-0 z-10">
-      {/* Hamburger menu icon for mobile screens */}
+    <div className="flex items-center justify-between p-4 bg-white border-b fixed top-0 left-0 right-0 z-10">
+      {/* Hamburger menu icon for mobile */}
       <button
-        className="text-gray-600 lg:hidden focus:outline-none" // Only visible on small screens
-        onClick={() => setShowSidebar((prev) => !prev)} // Toggle sidebar visibility
+        className="text-gray-500 lg:hidden"
+        onClick={() => setShowSidebar((prev) => !prev)}
       >
         <FontAwesomeIcon icon={faBars} size="lg" />
       </button>
 
-      {/* Chat title or selected user */}
-      <h2 className="text-xl font-bold text-center flex-1 lg:text-left text-gray-800">
+      {/* Title with selected user */}
+      <h2 className="text-2xl font-semibold flex-1 text-center lg:text-left">
         {selectedUser ? `Chat with ${selectedUser}` : 'CHATS ✍🏽'}
       </h2>
 
-      {/* Notification bell icon with unread count */}
-      <div className="relative mr-4">
-        <FontAwesomeIcon icon={faBell} size="lg" className="text-gray-600 cursor-pointer" />
+      {/* Notification bell icon with unread badge */}
+      <div className="relative">
+        <FontAwesomeIcon icon={faBell} size="lg" className="text-gray-500" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center h-5 w-5 text-xs font-semibold leading-none text-white bg-red-500 rounded-full">
+          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-500 rounded-full">
             {unreadCount}
           </span>
         )}
@@ -31,11 +34,11 @@ function ChatHeader({ setShowSidebar, handleLogout, selectedUser, unreadCount })
       {/* Logout button */}
       <button
         onClick={handleLogout}
-        className="text-gray-600 hover:text-red-500 transition-colors duration-200 focus:outline-none"
+        className="ml-4 text-gray-500 hover:text-red-500 transition-colors"
       >
         <FontAwesomeIcon icon={faSignOutAlt} size="lg" />
       </button>
-    </header>
+    </div>
   );
 }
 

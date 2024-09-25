@@ -269,6 +269,7 @@ function Chat() {
         setShowSidebar={setShowSidebar}
         goBack={() => navigate(-1)}
         unreadCount={totalUnreadCount}
+        selectedUser={selectedUser}
       />
 
       {/* Sidebar */}
