@@ -248,7 +248,7 @@ function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-white overflow-hidden">
       {/* Mobile header */}
       <ChatHeader
         showSearch={showSearch}
@@ -256,51 +256,57 @@ function Chat() {
         handleLogout={handleLogout}
         setShowSidebar={setShowSidebar}
         goBack={() => navigate(-1)}
+        className="flex justify-between items-center px-4 py-2 border-b bg-gray-100"
       />
-
-      {/* Sidebar */}
-      <UserSidebar
-        showSidebar={showSidebar}
-        users={filteredUsers}
-        messages={messages}
-        customUserId={customUserId}
-        selectedUser={selectedUser}
-        handleUserClick={handleUserClick}
-        searchTerm={searchTerm}
-        handleSearch={handleSearch}
-        setShowSidebar={setShowSidebar}
-        unreadMessagesMap={unreadMessagesMap} // Pass this prop
-      />
-
-      {/* Chat area */}
-      <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
-        {/* Message list */}
-        <MessageList
+  
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <UserSidebar
+          showSidebar={showSidebar}
+          users={filteredUsers}
           messages={messages}
           customUserId={customUserId}
-          messageEndRef={messageEndRef}
           selectedUser={selectedUser}
-          setActive={handleChatAreaClick}
-          setShowEmojiPicker={setShowEmojiPicker}
+          handleUserClick={handleUserClick}
+          searchTerm={searchTerm}
+          handleSearch={handleSearch}
+          setShowSidebar={setShowSidebar}
+          unreadMessagesMap={unreadMessagesMap} // Pass this prop
+          className="overflow-auto h-full"
         />
-
-        {/* Message input */}
-        <MessageInput
-          newMessage={newMessage}
-          setNewMessage={setNewMessage}
-          handleSendMessage={handleSendMessage}
-          handleFileSend={handleFileSend}
-          handleKeyDown={handleKeyDown}
-          setShowEmojiPicker={setShowEmojiPicker}
-          customUserId={customUserId}
-          chatId={chatId} // Ensure chatId is passed
-        />
+  
+        {/* Chat area */}
+        <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
+          {/* Message list */}
+          <MessageList
+            messages={messages}
+            customUserId={customUserId}
+            messageEndRef={messageEndRef}
+            selectedUser={selectedUser}
+            setActive={handleChatAreaClick}
+            setShowEmojiPicker={setShowEmojiPicker}
+            className="flex-1 overflow-auto"
+          />
+  
+          {/* Message input */}
+          <MessageInput
+            newMessage={newMessage}
+            setNewMessage={setNewMessage}
+            handleSendMessage={handleSendMessage}
+            handleFileSend={handleFileSend}
+            handleKeyDown={handleKeyDown}
+            setShowEmojiPicker={setShowEmojiPicker}
+            customUserId={customUserId}
+            chatId={chatId} // Ensure chatId is passed
+          />
+        </div>
       </div>
-
+  
       {/* Emoji Picker */}
       {showEmojiPicker && <EmojiPicker onEmojiClick={onEmojiClick} />}
     </div>
   );
+  
 }
 
 export default Chat;

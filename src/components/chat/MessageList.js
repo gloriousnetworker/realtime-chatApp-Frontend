@@ -1,27 +1,29 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { format, isToday, isYesterday } from "date-fns";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
-function MessageList({ messages, customUserId, messageEndRef, selectedUser, setActive, closePickers }) {
-  const navigate = useNavigate(); // Initialize the navigate function
-  const [isAtBottom, setIsAtBottom] = useState(true);
+function MessageList({ messages, customUserId, selectedUser, setActive, closePickers }) {
+  const navigate = useNavigate();
   const messageListRef = useRef(null);
+  const messageEndRef = useRef(null); // Initialize messageEndRef here
 
+  // Scroll to the bottom of the messages
   const scrollToBottom = useCallback(() => {
-    if (isAtBottom) {
-      messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [isAtBottom, messageEndRef]);
+    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
+  // Trigger scrollToBottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Handle user scrolling to determine if they're at the bottom
   const handleScroll = () => {
-    const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
-    setIsAtBottom(scrollTop + clientHeight >= scrollHeight - 1);
+    // const { scrollTop, clientHeight, scrollHeight } = messageListRef.current;
+    // Optionally perform some action if needed when user scrolls
   };
 
+  // Format date labels
   const formatDateLabel = (timestamp) => {
     const messageDate =
       timestamp instanceof Date
@@ -35,6 +37,7 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
     return format(messageDate, "MMMM dd, yyyy");
   };
 
+  // Format message time
   const formatMessageTime = (timestamp) => {
     const messageDate =
       timestamp instanceof Date
@@ -48,9 +51,10 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
 
   let lastMessageDate = null;
 
+  // Handle click events for interacting with the chat area
   const handleClick = (event) => {
     const target = event.target;
-    if (target.closest('.picker-button')) {
+    if (target.closest(".picker-button")) {
       return; // Prevent closing if a picker button is clicked
     }
 
@@ -134,6 +138,7 @@ function MessageList({ messages, customUserId, messageEndRef, selectedUser, setA
             );
           })
         )}
+        {/* Ensure this is positioned at the end of the message list */}
         <div ref={messageEndRef} />
       </div>
     </div>
