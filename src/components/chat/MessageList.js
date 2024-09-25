@@ -81,7 +81,7 @@ function MessageList({
         onScroll={handleScroll}
       >
         {messages.length === 0 ? (
-          <div className="text-center mt-16">
+          <div className="text-center mt-32">
             <img
               src="Message.jpg" // Replace with your image URL
               alt="No messages illustration"

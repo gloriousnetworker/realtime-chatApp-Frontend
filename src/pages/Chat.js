@@ -277,7 +277,7 @@ function Chat() {
         />
 
         {/* Chat area */}
-        <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
+        <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col overflow-hidden">
           {/* Message list */}
           <MessageList
             messages={messages}
