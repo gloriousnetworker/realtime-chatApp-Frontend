@@ -13,13 +13,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Picker from "emoji-picker-react";
 
+
+
 function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showFileOptions, setShowFileOptions] = useState(false);
-
-  // Refs for file inputs
   const photoInputRef = useRef(null);
   const documentInputRef = useRef(null);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const onEmojiClick = (emojiData) => {
     setNewMessage((prevMessage) => prevMessage + emojiData.emoji);
@@ -39,12 +40,18 @@ function MessageInput({ newMessage, setNewMessage, handleSendMessage }) {
       console.log(files); // Replace with your upload logic
     }
   };
+  
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      if (e.shiftKey) {
-        return; // Allow line break on Shift + Enter
+      if (isMobile) {
+        // On mobile, allow Enter to create a new line
+        return;
+      } else if (e.shiftKey) {
+        // Allow line break on Shift + Enter for desktop
+        return;
       } else {
+        // On desktop, Enter without Shift sends the message
         e.preventDefault(); // Prevent default action (new line) when Enter is pressed
         handleSendMessage();
       }

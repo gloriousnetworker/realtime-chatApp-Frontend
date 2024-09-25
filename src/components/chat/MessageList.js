@@ -15,10 +15,10 @@ function MessageList({
   const messageListRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
-    if (isAtBottom) {
+    if (isAtBottom && messages.length > 0) {
       messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [isAtBottom, messageEndRef]);
+  }, [isAtBottom, messageEndRef, messages.length]);
 
   useEffect(() => {
     scrollToBottom();
@@ -77,7 +77,7 @@ function MessageList({
       <div
         ref={messageListRef}
         className="p-4 pb-24 overflow-y-auto"
-        style={{ height: "calc(100% - 56px)" }}
+        style={{ height: "calc(100% - 56px)", overflowY: "auto" }} // Ensure auto-scroll works correctly
         onScroll={handleScroll}
       >
         {messages.length === 0 ? (
@@ -87,6 +87,7 @@ function MessageList({
               alt="No messages illustration"
               className="mt-4 mx-auto h-32 w-auto"
             />
+            <p className="text-gray-500 mt-4">No messages yet</p>
           </div>
         ) : (
           messages.map((message) => {
