@@ -33,6 +33,11 @@ function Chat() {
   const [unreadMessagesMap, setUnreadMessagesMap] = useState({});
   const messageEndRef = useRef(null);
 
+  const totalUnreadCount = Object.values(unreadMessagesMap).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+
   const { customUserId, users, loading } =
     useUserInitialization(setFilteredUsers); // Get initialized user data
 
@@ -188,7 +193,16 @@ function Chat() {
     }
   }, [isChatActive]);
 
-  // Subscribe to messages when chatId changes
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          console.log("Notification permission granted.");
+        }
+      });
+    }
+  }, []);
+
   useEffect(() => {
     if (!chatId) return;
 
@@ -200,27 +214,23 @@ function Chat() {
           ...doc.data(),
         }));
 
-        setMessages(
-          fetchedMessages.sort(
-            (a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()
-          )
-        );
+        // Update messages state
+        setMessages(fetchedMessages.sort((a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()));
 
-        // Track unread messages for the selected user
-        if (selectedUser && document.visibilityState === "hidden") {
-          const unreadCount = fetchedMessages.filter(
-            (msg) => msg.recipientId === customUserId && !msg.isRead
-          ).length;
+        const unreadMessages = fetchedMessages.filter((msg) => msg.recipientId === customUserId && !msg.isRead);
+        const unreadCount = unreadMessages.length;
 
-          if (unreadCount > 0) {
-            setUnreadMessagesMap((prev) => ({
-              ...prev,
-              [selectedUser]: unreadCount, // Add unread count for selected user
-            }));
+        if (unreadCount > 0 && selectedUser !== null && !isChatActive) {
+          setUnreadMessagesMap((prev) => ({
+            ...prev,
+            [selectedUser]: (prev[selectedUser] || 0) + unreadCount,
+          }));
 
-            new Notification(
-              `You have ${unreadCount} new message(s) from ${selectedUser}`
-            );
+          if (Notification.permission === "granted") {
+            new Notification("New message received", {
+              body: `You have ${unreadCount} new messages from ${selectedUser}`,
+              icon: "/path/to/icon.png",
+            });
           }
         }
       },
@@ -230,25 +240,27 @@ function Chat() {
     );
 
     return () => unsubscribe();
-  }, [chatId, selectedUser, customUserId]);
-
+  }, [chatId, selectedUser, customUserId, isChatActive]);
+  
   // Mark messages as read when a chat is opened
   useEffect(() => {
-    if (!selectedUser) return;
-
-    // Reset unread messages for the selected user
-    setUnreadMessagesMap((prev) => ({
-      ...prev,
-      [selectedUser]: 0,
-    }));
+    if (selectedUser) {
+      // Reset unread messages for the selected user
+      setUnreadMessagesMap((prev) => ({
+        ...prev,
+        [selectedUser]: 0,
+      }));
+    }
   }, [selectedUser]);
+  
+  
 
   if (loading) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col h-screen bg-white">
       {/* Mobile header */}
       <ChatHeader
         showSearch={showSearch}
@@ -256,50 +268,46 @@ function Chat() {
         handleLogout={handleLogout}
         setShowSidebar={setShowSidebar}
         goBack={() => navigate(-1)}
-        selectedUser={selectedUser} // Pass selectedUser prop
-        className="flex justify-between items-center px-4 py-2 border-b bg-gray-100"
+        unreadCount={totalUnreadCount}
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <UserSidebar
-          showSidebar={showSidebar}
-          users={filteredUsers}
+      {/* Sidebar */}
+      <UserSidebar
+        showSidebar={showSidebar}
+        users={filteredUsers}
+        messages={messages}
+        customUserId={customUserId}
+        selectedUser={selectedUser}
+        handleUserClick={handleUserClick}
+        searchTerm={searchTerm}
+        handleSearch={handleSearch}
+        setShowSidebar={setShowSidebar}
+        unreadMessagesMap={unreadMessagesMap} // Pass this prop
+      />
+
+      {/* Chat area */}
+      <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col height-chat sm:overflow-hidden p-4 ml-auto">
+        {/* Message list */}
+        <MessageList
           messages={messages}
           customUserId={customUserId}
+          messageEndRef={messageEndRef}
           selectedUser={selectedUser}
-          handleUserClick={handleUserClick}
-          searchTerm={searchTerm}
-          handleSearch={handleSearch}
-          setShowSidebar={setShowSidebar}
-          unreadMessagesMap={unreadMessagesMap} // Pass this prop
-          className="overflow-auto h-full"
+          setActive={handleChatAreaClick}
+          setShowEmojiPicker={setShowEmojiPicker}
         />
 
-        {/* Chat area */}
-        <div className="w-full md:w-3/5 lg:w-2/3 xl:w-3/4 flex flex-col overflow-hidden">
-          {/* Message list */}
-          <MessageList
-            messages={messages}
-            customUserId={customUserId}
-            messageEndRef={messageEndRef}
-            selectedUser={selectedUser}
-            setActive={handleChatAreaClick}
-            setShowEmojiPicker={setShowEmojiPicker}
-          />
-
-          {/* Message input */}
-          <MessageInput
-            newMessage={newMessage}
-            setNewMessage={setNewMessage}
-            handleSendMessage={handleSendMessage}
-            handleFileSend={handleFileSend}
-            handleKeyDown={handleKeyDown}
-            setShowEmojiPicker={setShowEmojiPicker}
-            customUserId={customUserId}
-            chatId={chatId} // Ensure chatId is passed
-          />
-        </div>
+        {/* Message input */}
+        <MessageInput
+          newMessage={newMessage}
+          setNewMessage={setNewMessage}
+          handleSendMessage={handleSendMessage}
+          handleFileSend={handleFileSend}
+          handleKeyDown={handleKeyDown}
+          setShowEmojiPicker={setShowEmojiPicker}
+          customUserId={customUserId}
+          chatId={chatId} // Ensure chatId is passed
+        />
       </div>
 
       {/* Emoji Picker */}

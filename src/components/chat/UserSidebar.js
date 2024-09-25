@@ -12,6 +12,7 @@ const UserSidebar = ({
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [unreadMessagesMap, setUnreadMessagesMap] = useState({});
+  const [newMessageStatus, setNewMessageStatus] = useState({}); // To track new message status
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -72,53 +73,61 @@ const UserSidebar = ({
     setFilteredUsers(filtered);
   };
 
+  // Handle click on user to update message status
+  const handleUserSelect = (userId) => {
+    handleUserClick(userId);
+    // Set the status of the clicked user messages to read
+    setNewMessageStatus((prev) => ({
+      ...prev,
+      [userId]: false, // Change to false for red dot
+    }));
+  };
+
   // Sort users based on recent message activity
-  // Sort users based on recent message activity
-const sortedUsers = filteredUsers.sort((a, b) => {
-  const lastMessageA = messages
-    .filter(
-      (msg) =>
-        msg.senderId === a.customUserId || msg.recipientId === a.customUserId
-    )
-    .sort((x, y) => {
-      const xTimestamp = x.timestamp?.toMillis
-        ? x.timestamp.toMillis()
-        : new Date(x.timestamp).getTime(); // Handle if it's not a Firestore Timestamp
-      const yTimestamp = y.timestamp?.toMillis
-        ? y.timestamp.toMillis()
-        : new Date(y.timestamp).getTime();
-      return yTimestamp - xTimestamp;
-    })[0];
+  const sortedUsers = filteredUsers.sort((a, b) => {
+    const lastMessageA = messages
+      .filter(
+        (msg) =>
+          msg.senderId === a.customUserId || msg.recipientId === a.customUserId
+      )
+      .sort((x, y) => {
+        const xTimestamp = x.timestamp?.toMillis
+          ? x.timestamp.toMillis()
+          : new Date(x.timestamp).getTime(); // Handle if it's not a Firestore Timestamp
+        const yTimestamp = y.timestamp?.toMillis
+          ? y.timestamp.toMillis()
+          : new Date(y.timestamp).getTime();
+        return yTimestamp - xTimestamp;
+      })[0];
 
-  const lastMessageB = messages
-    .filter(
-      (msg) =>
-        msg.senderId === b.customUserId || msg.recipientId === b.customUserId
-    )
-    .sort((x, y) => {
-      const xTimestamp = x.timestamp?.toMillis
-        ? x.timestamp.toMillis()
-        : new Date(x.timestamp).getTime();
-      const yTimestamp = y.timestamp?.toMillis
-        ? y.timestamp.toMillis()
-        : new Date(y.timestamp).getTime();
-      return yTimestamp - xTimestamp;
-    })[0];
+    const lastMessageB = messages
+      .filter(
+        (msg) =>
+          msg.senderId === b.customUserId || msg.recipientId === b.customUserId
+      )
+      .sort((x, y) => {
+        const xTimestamp = x.timestamp?.toMillis
+          ? x.timestamp.toMillis()
+          : new Date(x.timestamp).getTime();
+        const yTimestamp = y.timestamp?.toMillis
+          ? y.timestamp.toMillis()
+          : new Date(y.timestamp).getTime();
+        return yTimestamp - xTimestamp;
+      })[0];
 
-  const lastTimestampA = lastMessageA?.timestamp?.toMillis
-    ? lastMessageA.timestamp.toMillis()
-    : lastMessageA
-    ? new Date(lastMessageA.timestamp).getTime()
-    : 0;
-  const lastTimestampB = lastMessageB?.timestamp?.toMillis
-    ? lastMessageB.timestamp.toMillis()
-    : lastMessageB
-    ? new Date(lastMessageB.timestamp).getTime()
-    : 0;
+    const lastTimestampA = lastMessageA?.timestamp?.toMillis
+      ? lastMessageA.timestamp.toMillis()
+      : lastMessageA
+      ? new Date(lastMessageA.timestamp).getTime()
+      : 0;
+    const lastTimestampB = lastMessageB?.timestamp?.toMillis
+      ? lastMessageB.timestamp.toMillis()
+      : lastMessageB
+      ? new Date(lastMessageB.timestamp).getTime()
+      : 0;
 
-  return lastTimestampB - lastTimestampA;
-});
-
+    return lastTimestampB - lastTimestampA;
+  });
 
   return (
     <div
@@ -150,6 +159,7 @@ const sortedUsers = filteredUsers.sort((a, b) => {
         ) : (
           sortedUsers.slice(0, 10).map((user) => {
             const unreadMessagesCount = unreadMessagesMap[user.customUserId] || 0;
+            const hasNewMessages = unreadMessagesCount > 0 && (newMessageStatus[user.customUserId] !== false);
 
             return (
               <div
@@ -157,15 +167,15 @@ const sortedUsers = filteredUsers.sort((a, b) => {
                 className={`p-4 mb-3 bg-white rounded-lg cursor-pointer hover:bg-gray-100 transition-all shadow-md ${
                   selectedUser === user.customUserId ? 'bg-gray-300' : ''
                 }`}
-                onClick={() => handleUserClick(user.customUserId)}
+                onClick={() => handleUserSelect(user.customUserId)} // Use the new handler
               >
                 <p className="text-gray-700 font-medium">{user.customUserId}</p>
 
-                {/* Unread Messages Indicator */}
-                {unreadMessagesCount > 0 && (
-                  <span className="ml-2 bg-red-500 text-white rounded-full px-2 py-1 text-xs">
-                    {unreadMessagesCount} unread
-                  </span>
+                {/* Notification Dot */}
+                {hasNewMessages ? (
+                  <span className="ml-2 bg-green-500 w-2 h-2 rounded-full inline-block" />
+                ) : (
+                  <span className="ml-2 bg-red-500 w-2 h-2 rounded-full inline-block" />
                 )}
               </div>
             );
